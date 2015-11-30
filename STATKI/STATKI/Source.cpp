@@ -6,7 +6,7 @@
 #include <windows.h>
 
 using namespace std;
-const int A = 10;
+const int A = 12;
 struct rodzaj_ {
 	string nazwa;
 	int maszty;
@@ -14,7 +14,7 @@ struct rodzaj_ {
 };
 rodzaj_ maszt2 = { "DWU-", 2 , 2 };
 rodzaj_ maszt3 = { "TROJ-", 3 , 2 };
-rodzaj_ maszt4 = { "CZTERO-" , 4 , 2 };
+rodzaj_ maszt4 = { "CZTERO-" , 4 , 1 };
 rodzaj_ maszt5 = { "PIECIO-" , 5 , 1 };
 struct korekta {
 	int kierunek;			// od 1 do 4, przy czym jeden to gora
@@ -334,7 +334,7 @@ void tura_gracz1(char pla2[][A], char pla2strzal[][A], int &wynik)
 	while (((int)x1 < 97 && (int)x1 > (63+A)) || (int)x1 < 65 || (int)x1 > (95+A) || pla2strzal[y][x] == 'o' || pla2strzal[y][x] == '~' || ((int)y1 < 97 && (int)y1 > (63+A)) || (int)y1 < 65 || (int)y1 > (95+A))
 	{
 		wyswietl_gracz1(pla2strzal);
-		cout << "PODAJ KOORDYNATY ATAKU POZIOME" << endl;
+		cout << "\a" << "PODAJ KOORDYNATY ATAKU POZIOME" << endl;
 		cin >> x1;
 		x = (int)x1 - 96;
 		if (x < 0)
@@ -369,18 +369,27 @@ void tura_gracz1(char pla2[][A], char pla2strzal[][A], int &wynik)
 }
 
 //ruch komputera, losowe wygenerowanie strzalu, strategia
-void tura_komputer(char pla[][A], char plastrzal[][A], int &wynik, korekta kor_strzal)
+void tura_komputer(char pla[][A], char plastrzal[][A], int &wynik, korekta &kor_strzal)
 {
 	srand(time(NULL));
 	bool nie_bylo = false;
+	bool nie_bylo_kier = false;
 	int x;
 	int y;
 	wyswietl_komputer(pla);
 	Sleep(2500);
 
 
-	if (kor_strzal.licznik = 0 && kor_strzal.traf)								// jesli bylo trafienie, ale zle wybrany kierunek
-		kor_strzal.kierunek = rand() % 4 + 1;
+	if (kor_strzal.licznik <2 && kor_strzal.traf)								// jesli bylo trafienie, albo zle wybrany kierunek
+		while (!nie_bylo_kier)
+		{
+			kor_strzal.kierunek = rand() % 4 + 1;								// ponizej sprawdzenie czy po wybraniu kierunku nie natrafimy na wczesniejsze pudlo lub trafienie
+			if ((kor_strzal.kierunek == 1 && (plastrzal[kor_strzal.y_kor - 1][kor_strzal.x_kor] != '~' || plastrzal[kor_strzal.y_kor - 1][kor_strzal.x_kor] != 'o')) ||
+				(kor_strzal.kierunek == 2 && (plastrzal[kor_strzal.y_kor][kor_strzal.x_kor + 1] != '~' || plastrzal[kor_strzal.y_kor][kor_strzal.x_kor + 1] != 'o')) ||
+				(kor_strzal.kierunek == 3 && (plastrzal[kor_strzal.y_kor + 1][kor_strzal.x_kor] != '~' || plastrzal[kor_strzal.y_kor + 1][kor_strzal.x_kor] != 'o')) ||
+				(kor_strzal.kierunek == 4 && (plastrzal[kor_strzal.y_kor][kor_strzal.x_kor - 1] != '~' || plastrzal[kor_strzal.y_kor][kor_strzal.x_kor - 1] != 'o')))
+				nie_bylo_kier = true;
+		}
 
 	if (!kor_strzal.traf)				// jesli bylo trafienie, to poprzedni stan x,y (z przesunieciem wedlug kierunku) jesli nie to randomowe x i y
 		while (!nie_bylo)
@@ -423,28 +432,24 @@ void tura_komputer(char pla[][A], char plastrzal[][A], int &wynik, korekta kor_s
 		}
 	}
 
-	if (pla[y][x] == 'o')
+	if (pla[y][x] == 'o')							// trafienie
 	{
 		plastrzal[y][x] = pla[y][x];
 		wynik += 1;
 		pla[y][x] = 'x';
 		kor_strzal.traf = true;
-		if (kor_strzal.licznik < 1)
-			kor_strzal.kierunek = rand() % 4 + 1;
 		kor_strzal.x_kor = x;
 		kor_strzal.y_kor = y;
-		kor_strzal.licznik++;
+		kor_strzal.licznik += 1;
 		wyswietl_komputer(pla);
 		cout << "KOMPUTER TRAFIL" << endl;
 		Sleep(2500);
 		tura_komputer(pla, plastrzal, wynik, kor_strzal);
 	}
 	else
-	{
+	{											// pudlo
 		plastrzal[y][x] = '~';
 		pla[y][x] = '~';
-		if (kor_strzal.licznik = 1)
-			kor_strzal.licznik = 0;
 		if (kor_strzal.licznik > 1)
 			kor_strzal = { 0,0,0,0,false };									// jesli jest to pudlo po kilku trafieniach z rzedu, to znaczy, ze statek jest zatopiony
 		wyswietl_komputer(pla);
@@ -479,7 +484,7 @@ void tura_gracz2(char pla2[][A], char pla2strzal[][A], int &wynik)
 	while (((int)x1 < 97 && (int)x1 > (63+A)) || (int)x1 < 65 || (int)x1 > (95+A) || pla2strzal[y][x] == 'o' || pla2strzal[y][x] == '~'  || ((int)y1 < 97 && (int)y1 > (63+A)) || (int)y1 < 65 || (int)y1 > (95+A))
 	{
 		wyswietl_gracz2(pla2strzal);
-		cout << "PODAJ KOORDYNATY ATAKU POZIOME" << endl;
+		cout << "\a" << "PODAJ KOORDYNATY ATAKU POZIOME" << endl;
 		cin >> x1;
 		x = (int)x1 - 96;
 		if (x < 0)
@@ -569,6 +574,7 @@ void main()
 					system("cls");
 					cout << "WYGRAL GRACZ 1" << endl;
 					wygrana = true;
+					Sleep(2000);
 				}
 				tura_gracz2(pla, plastrzal, wynik_gracz2);
 				if (wynik_gracz2 == warunki_wygranej)
@@ -576,6 +582,7 @@ void main()
 					system("cls");
 					cout << "WYGRAL GRACZ 2" << endl;
 					wygrana = true;
+					Sleep(2000);
 				}
 			}
 		}
@@ -601,6 +608,7 @@ void main()
 					system("cls");
 					cout << "WYGRAL GRACZ 1" << endl;
 					wygrana = true;
+					Sleep(2000);
 				}
 				tura_komputer(pla, plastrzal, wynik_gracz2, kor_strzal);
 				if (wynik_gracz2 == warunki_wygranej)
@@ -608,6 +616,7 @@ void main()
 					system("cls");
 					cout << "WYGRAL KOMPUTER" << endl;
 					wygrana = true;
+					Sleep(2000);
 				}
 			}
 		}
