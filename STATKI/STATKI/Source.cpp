@@ -6,7 +6,7 @@
 #include <windows.h>
 
 using namespace std;
-const int A = 12;
+const int A = 10;
 struct rodzaj_ {
 	string nazwa;
 	int maszty;
@@ -21,7 +21,9 @@ struct korekta {
 	int licznik;			// licznik, które trafienie z rzêdu
 	int x_kor;				// x ostatniego trafienia
 	int y_kor;				// y ostatniego trafienia
-	bool traf;
+	bool traf;				// czy nastapilo trafienie
+	int x_p;				// x trafiony jako pierwszy
+	int y_p;				// y trafiony jako pierwszy
 };
 
 // wypelnia plansze od poczatku
@@ -200,54 +202,46 @@ void rozstaw_gracz(char pla[][A])
 //sprawdza czy nie koliduje tak jak wolne_gra tylko zmienne sterujace sa cyframi
 bool wolne_komp(char pla2[][A], int x, int y, int rodzaj, int kierunek)
 {
-	bool czy = false;
 	if (kierunek == 1)
 		for (int j = 1; j < rodzaj; j++)
 		{
 			if ((pla2[y - j][x] == 'o') || ((y - j) < 1) || (pla2[y - j - 1][x] == 'o') || (pla2[y - j - 1][x - 1] == 'o') || (pla2[y - j - 1][x + 1] == 'o') || (pla2[y - j][x + 1] == 'o') || (pla2[y - j][x - 1] == 'o'))
 				return false;	//sprawdzam czy jest wolne dookola
-			else
-				czy = true;
 		}
 	else if (kierunek == 3)
 		for (int j = 1; j < rodzaj; j++)
 		{
 			if ((pla2[y + j][x] == 'o') || ((y + j) >= A) || (pla2[y + j + 1][x] == 'o') || (pla2[y + j + 1][x - 1] == 'o') || (pla2[y + j + 1][x + 1] == 'o') || (pla2[y + j][x + 1] == 'o') || (pla2[y + j][x - 1] == 'o'))
 				return false;	//sprawdzam czy jest wolne dookola
-			else
-				czy = true;
 		}
 	else if (kierunek == 4)
 		for (int j = 1; j < rodzaj; j++)
 		{
 			if ((pla2[y][x - j] == 'o') || ((x - j) < 1) || (pla2[y][x - j - 1] == 'o') || (pla2[y - 1][x - j - 1] == 'o') || (pla2[y + 1][x - j - 1] == 'o') || (pla2[y + 1][x - j] == 'o') || (pla2[y - 1][x - j] == 'o'))
 				return false;	//sprawdzam czy jest wolne dookola
-			else
-				czy = true;
 		}
 	else if (kierunek == 2)
 		for (int j = 1; j < rodzaj; j++)
 		{
 			if ((pla2[y][x + j] == 'o') || ((x + j) >= A) || (pla2[y][x + j + 1] == 'o') || (pla2[y + 1][x + j + 1] == 'o') || (pla2[y - 1][x + j + 1] == 'o') || (pla2[y + 1][x + j] == 'o') || (pla2[y - 1][x + j] == 'o'))
 				return false;	//sprawdzam czy jest wolne dookola
-			else
-				czy = true;
 		}
-	if (czy)
-		return true;
+	return true;
 }
 
 //rozstawienie danego statku przez komputer
-void rozstaw_statek_komp(char pla2[][A], int ile, int rodzaj)
+bool rozstaw_statek_komp(char pla2[][A], int ile, int rodzaj)
 {
 	int x;
 	int y;
 	int kierunek;
 	bool szansa;
+	int bezpieczenstwo;					// zmienna bezpieczenstwa
 
 	srand(time(NULL));
 	for (int i = 0; i < ile; i++)
 	{
+		bezpieczenstwo = 0;				// bezpieczenstwo zerowane przy kazdym nowym statku
 		x = 0;
 		y = 0;
 		while (x<1 || y<1 || pla2[y][x] == 'o' || pla2[y - 1][x] == 'o' || pla2[y - 1][x + 1] == 'o' || pla2[y - 1][x - 1] == 'o' || pla2[y][x + 1] == 'o' || pla2[y][x - 1] == 'o' || pla2[y + 1][x + 1] == 'o' || pla2[y + 1][x - 1] == 'o' || pla2[y + 1][x] == 'o')
@@ -257,7 +251,7 @@ void rozstaw_statek_komp(char pla2[][A], int ile, int rodzaj)
 		}
 		pla2[y][x] = 'o';
 		szansa = true;
-		while (szansa)
+		while (szansa && bezpieczenstwo<15)		// wychodzi, gdy wylosowano zly kierunek 15 razy
 		{
 			szansa = false;
 			kierunek = rand() % 4 + 1;			// kierunek: 1-gora, 2-prawo, 3-dol, 4-lewo
@@ -277,9 +271,15 @@ void rozstaw_statek_komp(char pla2[][A], int ile, int rodzaj)
 						pla2[y][x - j] = 'o';
 			}
 			else
+			{
 				szansa = true;
+				bezpieczenstwo++;				// przy nieudanym losowaniu kierunku, bezpieczenstwo wzrasta
+			}
 		}
+		if (bezpieczenstwo >= 15)
+			return false;
 	}
+	return true;
 }
 
 //wypelnia plansze komputera (pla2) z pomoca funkcji rozstaw_statek_komp
@@ -287,11 +287,16 @@ void rozstaw_komp(char pla2[][A])
 {
 	system("cls");
 	cout << "CZEKAJ, TERAZ SWOJE STATKI ROZSTAWIA KOMPUTER ..." << endl;
-	rozstaw_statek_komp(pla2, maszt2.ilosc, maszt2.maszty);
-	rozstaw_statek_komp(pla2, maszt3.ilosc, maszt3.maszty);
-	rozstaw_statek_komp(pla2, maszt4.ilosc, maszt4.maszty);
-	rozstaw_statek_komp(pla2, maszt5.ilosc, maszt5.maszty);
-	Sleep(2000);
+	if (!rozstaw_statek_komp(pla2, maszt2.ilosc, maszt2.maszty) ||
+		!rozstaw_statek_komp(pla2, maszt3.ilosc, maszt3.maszty) ||
+		!rozstaw_statek_komp(pla2, maszt4.ilosc, maszt4.maszty) ||
+		!rozstaw_statek_komp(pla2, maszt5.ilosc, maszt5.maszty))
+	{
+		reset_pla(pla2);
+		rozstaw_komp(pla2);
+	}
+	else
+		Sleep(2000);
 }
 
 //wyswietla plansze gracza1 i przeciwnika
@@ -384,25 +389,17 @@ void tura_komputer(char pla[][A], char plastrzal[][A], int &wynik, korekta &kor_
 		while (!nie_bylo_kier)
 		{
 			kor_strzal.kierunek = rand() % 4 + 1;								// ponizej sprawdzenie czy po wybraniu kierunku nie natrafimy na wczesniejsze pudlo lub trafienie
-			if ((kor_strzal.kierunek == 1 && (plastrzal[kor_strzal.y_kor - 1][kor_strzal.x_kor] != '~' || plastrzal[kor_strzal.y_kor - 1][kor_strzal.x_kor] != 'o')) ||
-				(kor_strzal.kierunek == 2 && (plastrzal[kor_strzal.y_kor][kor_strzal.x_kor + 1] != '~' || plastrzal[kor_strzal.y_kor][kor_strzal.x_kor + 1] != 'o')) ||
-				(kor_strzal.kierunek == 3 && (plastrzal[kor_strzal.y_kor + 1][kor_strzal.x_kor] != '~' || plastrzal[kor_strzal.y_kor + 1][kor_strzal.x_kor] != 'o')) ||
-				(kor_strzal.kierunek == 4 && (plastrzal[kor_strzal.y_kor][kor_strzal.x_kor - 1] != '~' || plastrzal[kor_strzal.y_kor][kor_strzal.x_kor - 1] != 'o')))
+			if ((kor_strzal.kierunek == 1 && plastrzal[kor_strzal.y_kor - 1][kor_strzal.x_kor] != '~' && plastrzal[kor_strzal.y_kor - 1][kor_strzal.x_kor] != 'o' && (kor_strzal.y_kor-1)>0) ||
+				(kor_strzal.kierunek == 2 && plastrzal[kor_strzal.y_kor][kor_strzal.x_kor + 1] != '~' && plastrzal[kor_strzal.y_kor][kor_strzal.x_kor + 1] != 'o' && (kor_strzal.x_kor+1)<A) ||
+				(kor_strzal.kierunek == 3 && plastrzal[kor_strzal.y_kor + 1][kor_strzal.x_kor] != '~' && plastrzal[kor_strzal.y_kor + 1][kor_strzal.x_kor] != 'o' && (kor_strzal.y_kor+1)<A) ||
+				(kor_strzal.kierunek == 4 && plastrzal[kor_strzal.y_kor][kor_strzal.x_kor - 1] != '~' && plastrzal[kor_strzal.y_kor][kor_strzal.x_kor - 1] != 'o' && (kor_strzal.x_kor-1)>0))
 				nie_bylo_kier = true;
 		}
-
-	if (!kor_strzal.traf)				// jesli bylo trafienie, to poprzedni stan x,y (z przesunieciem wedlug kierunku) jesli nie to randomowe x i y
-		while (!nie_bylo)
-		{
-			x = rand() % (A-1) + 1;
-			y = rand() % (A-1) + 1;
-			if (plastrzal[y][x] != 'o' && plastrzal[y][x] != '~')
-			nie_bylo = true;
-		}
-	else if (kor_strzal.traf && kor_strzal.kierunek == 1)
+				// jesli bylo trafienie, to poprzedni stan x,y (z przesunieciem wedlug kierunku) jesli nie to randomowe x i y
+	if (kor_strzal.traf && kor_strzal.kierunek == 1)
 	{
-		x = kor_strzal.x_kor;
 		y = kor_strzal.y_kor - 1;
+		x = kor_strzal.x_kor;
 	}
 	else if (kor_strzal.traf && kor_strzal.kierunek == 2)
 	{
@@ -411,18 +408,26 @@ void tura_komputer(char pla[][A], char plastrzal[][A], int &wynik, korekta &kor_
 	}
 	else if (kor_strzal.traf && kor_strzal.kierunek == 3)
 	{
-		x = kor_strzal.x_kor;
 		y = kor_strzal.y_kor + 1;
+		x = kor_strzal.x_kor;
 	}
 	else if (kor_strzal.traf && kor_strzal.kierunek == 4)
 	{
 		x = kor_strzal.x_kor - 1;
 		y = kor_strzal.y_kor;
 	}
+	else
+		while (!nie_bylo)
+		{
+			x = rand() % (A - 1) + 1;
+			y = rand() % (A - 1) + 1;
+			if (plastrzal[y][x] != 'o' && plastrzal[y][x] != '~')
+				nie_bylo = true;
+		}
+
 
 	if (kor_strzal.licznik > 1 && (x > (A-1) || x < 1 || y>(A-1) || y < 1))				// jesli licznik jest wiekszy od jeden, czyli jest to strzal po odkryciu kierunku ustawienia statku i wychodzi poza tablice
 	{
-		kor_strzal = { 0,0,0,0,false };
 		while (!nie_bylo)
 		{
 			x = rand() % (A-1) + 1;
@@ -438,6 +443,11 @@ void tura_komputer(char pla[][A], char plastrzal[][A], int &wynik, korekta &kor_
 		wynik += 1;
 		pla[y][x] = 'x';
 		kor_strzal.traf = true;
+		if (kor_strzal.licznik < 1)					// jesli jest to pierwsze trafienie, to ustawiamy x_p i y_p w tym miejscu
+		{
+			kor_strzal.x_p = x;
+			kor_strzal.y_p = y;
+		}
 		kor_strzal.x_kor = x;
 		kor_strzal.y_kor = y;
 		kor_strzal.licznik += 1;
@@ -450,8 +460,31 @@ void tura_komputer(char pla[][A], char plastrzal[][A], int &wynik, korekta &kor_
 	{											// pudlo
 		plastrzal[y][x] = '~';
 		pla[y][x] = '~';
-		if (kor_strzal.licznik > 1)
-			kor_strzal = { 0,0,0,0,false };									// jesli jest to pudlo po kilku trafieniach z rzedu, to znaczy, ze statek jest zatopiony
+		if (kor_strzal.licznik > 1 && kor_strzal.traf)
+		{
+			if (kor_strzal.kierunek == 1 && plastrzal[kor_strzal.y_p + 1][kor_strzal.x_p] != '~' && plastrzal[kor_strzal.y_p + 1][kor_strzal.x_p] != 'o' && (kor_strzal.y_p + 1) < A)
+			{
+				kor_strzal.y_kor = kor_strzal.y_p;
+				kor_strzal.kierunek = 3;
+			}
+			else if (kor_strzal.kierunek == 2 && plastrzal[kor_strzal.y_p][kor_strzal.x_p - 1] != '~' && plastrzal[kor_strzal.y_p][kor_strzal.x_p - 1] != 'o' && (kor_strzal.x_p - 1) > 0)
+			{
+				kor_strzal.kierunek = 4;
+				kor_strzal.x_kor = kor_strzal.x_p;
+			}
+			else if (kor_strzal.kierunek == 3 && plastrzal[kor_strzal.y_p - 1][kor_strzal.x_p] != '~' && plastrzal[kor_strzal.y_p - 1][kor_strzal.x_p] != 'o' && (kor_strzal.y_p - 1) > 0)
+			{
+				kor_strzal.y_kor = kor_strzal.y_p;
+				kor_strzal.kierunek = 1;
+			}
+			else if (kor_strzal.kierunek == 4 && plastrzal[kor_strzal.y_p][kor_strzal.x_p + 1] != '~' && plastrzal[kor_strzal.y_p][kor_strzal.x_p + 1] != 'o' && (kor_strzal.x_p - 1) < A)
+			{
+				kor_strzal.kierunek = 2;
+				kor_strzal.x_kor = kor_strzal.x_p;
+			}
+			else
+				kor_strzal = { 0,0,0,0,false,0,0 };								// jesli jest to pudlo po kilku trafieniach z rzedu i w odwrotnym kierunku nie da sie juz strzelac to znaczy, ze statek jest zatopiony
+		}
 		wyswietl_komputer(pla);
 		cout << "KOMPUTER SPUDLOWAL" << endl;
 		Sleep(2500);
