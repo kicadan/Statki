@@ -6,19 +6,23 @@
 #include <windows.h>
 
 using namespace std;
-const int A = 16;
+const int A = 10;
 struct rodzaj_ {
 	string nazwa;
 	int maszty;
 	int ilosc;
 };
-rodzaj_ maszt2 = { "DWU-", 2 , 3 };
+rodzaj_ maszt2 = { "DWU-", 2 , 2 };
 rodzaj_ maszt3 = { "TROJ-", 3 , 2 };
 rodzaj_ maszt4 = { "CZTERO-" , 4 , 2 };
 rodzaj_ maszt5 = { "PIECIO-" , 5 , 1 };
-
-int warunki_wygranej;
-
+struct korekta {
+	int kierunek;			// od 1 do 4, przy czym jeden to gora
+	int licznik;			// licznik, które trafienie z rzêdu
+	int x_kor;				// x ostatniego trafienia
+	int y_kor;				// y ostatniego trafienia
+	bool traf;
+};
 
 // wypelnia plansze od poczatku
 void reset_pla(char pla[][A])
@@ -248,8 +252,8 @@ void rozstaw_statek_komp(char pla2[][A], int ile, int rodzaj)
 		y = 0;
 		while (x<1 || y<1 || pla2[y][x] == 'o' || pla2[y - 1][x] == 'o' || pla2[y - 1][x + 1] == 'o' || pla2[y - 1][x - 1] == 'o' || pla2[y][x + 1] == 'o' || pla2[y][x - 1] == 'o' || pla2[y + 1][x + 1] == 'o' || pla2[y + 1][x - 1] == 'o' || pla2[y + 1][x] == 'o')
 		{
-			x = rand() % 15 + 1;
-			y = rand() % 15 + 1;
+			x = rand() % (A-1) + 1;
+			y = rand() % (A-1) + 1;
 		}
 		pla2[y][x] = 'o';
 		szansa = true;
@@ -324,22 +328,22 @@ void tura_gracz1(char pla2[][A], char pla2strzal[][A], int &wynik)
 {
 	int x;
 	int y;
-	char x1;
-	char y1;
+	char x1 = 0;
+	char y1 = 0;
 
-	while (((int)x1 < 97 && (int)x1 > 79) || (int)x1 < 65 || (int)x1 > 111 || pla2strzal[y][x] == 'o' || pla2strzal[y][x] == '~' || ((int)y1 < 97 && (int)y1 > 79) || (int)y1 < 65 || (int)y1 > 111)
+	while (((int)x1 < 97 && (int)x1 > (63+A)) || (int)x1 < 65 || (int)x1 > (95+A) || pla2strzal[y][x] == 'o' || pla2strzal[y][x] == '~' || ((int)y1 < 97 && (int)y1 > (63+A)) || (int)y1 < 65 || (int)y1 > (95+A))
 	{
 		wyswietl_gracz1(pla2strzal);
-		cout << "PODAJ KOORDYNATY ATAKU PIONOWE" << endl;
-		cin >> y1;
-		y = (int)y1 - 96;
-		if (y < 0)
-			y += 32;
 		cout << "PODAJ KOORDYNATY ATAKU POZIOME" << endl;
 		cin >> x1;
 		x = (int)x1 - 96;
 		if (x < 0)
 			x += 32;
+		cout << "PODAJ KOORDYNATY ATAKU PIONOWE" << endl;
+		cin >> y1;
+		y = (int)y1 - 96;
+		if (y < 0)
+			y += 32;
 	}
 
 	if (pla2[y][x] == 'o')
@@ -365,7 +369,7 @@ void tura_gracz1(char pla2[][A], char pla2strzal[][A], int &wynik)
 }
 
 //ruch komputera, losowe wygenerowanie strzalu, strategia
-void tura_komputer(char pla[][A], char plastrzal[][A], int &wynik)
+void tura_komputer(char pla[][A], char plastrzal[][A], int &wynik, korekta kor_strzal)
 {
 	srand(time(NULL));
 	bool nie_bylo = false;
@@ -374,12 +378,49 @@ void tura_komputer(char pla[][A], char plastrzal[][A], int &wynik)
 	wyswietl_komputer(pla);
 	Sleep(2500);
 
-	while (!nie_bylo)
-	{
-		x = rand() % 15 + 1;
-		y = rand() % 15 + 1;
-		if (plastrzal[y][x] != 'o' && plastrzal[y][x] != '~')
+
+	if (kor_strzal.licznik = 0 && kor_strzal.traf)								// jesli bylo trafienie, ale zle wybrany kierunek
+		kor_strzal.kierunek = rand() % 4 + 1;
+
+	if (!kor_strzal.traf)				// jesli bylo trafienie, to poprzedni stan x,y (z przesunieciem wedlug kierunku) jesli nie to randomowe x i y
+		while (!nie_bylo)
+		{
+			x = rand() % (A-1) + 1;
+			y = rand() % (A-1) + 1;
+			if (plastrzal[y][x] != 'o' && plastrzal[y][x] != '~')
 			nie_bylo = true;
+		}
+	else if (kor_strzal.traf && kor_strzal.kierunek == 1)
+	{
+		x = kor_strzal.x_kor;
+		y = kor_strzal.y_kor - 1;
+	}
+	else if (kor_strzal.traf && kor_strzal.kierunek == 2)
+	{
+		x = kor_strzal.x_kor + 1;
+		y = kor_strzal.y_kor;
+	}
+	else if (kor_strzal.traf && kor_strzal.kierunek == 3)
+	{
+		x = kor_strzal.x_kor;
+		y = kor_strzal.y_kor + 1;
+	}
+	else if (kor_strzal.traf && kor_strzal.kierunek == 4)
+	{
+		x = kor_strzal.x_kor - 1;
+		y = kor_strzal.y_kor;
+	}
+
+	if (kor_strzal.licznik > 1 && (x > (A-1) || x < 1 || y>(A-1) || y < 1))				// jesli licznik jest wiekszy od jeden, czyli jest to strzal po odkryciu kierunku ustawienia statku i wychodzi poza tablice
+	{
+		kor_strzal = { 0,0,0,0,false };
+		while (!nie_bylo)
+		{
+			x = rand() % (A-1) + 1;
+			y = rand() % (A-1) + 1;
+			if (plastrzal[y][x] != 'o' && plastrzal[y][x] != '~')
+				nie_bylo = true;
+		}
 	}
 
 	if (pla[y][x] == 'o')
@@ -387,15 +428,25 @@ void tura_komputer(char pla[][A], char plastrzal[][A], int &wynik)
 		plastrzal[y][x] = pla[y][x];
 		wynik += 1;
 		pla[y][x] = 'x';
+		kor_strzal.traf = true;
+		if (kor_strzal.licznik < 1)
+			kor_strzal.kierunek = rand() % 4 + 1;
+		kor_strzal.x_kor = x;
+		kor_strzal.y_kor = y;
+		kor_strzal.licznik++;
 		wyswietl_komputer(pla);
 		cout << "KOMPUTER TRAFIL" << endl;
 		Sleep(2500);
-		tura_komputer(pla, plastrzal, wynik);
+		tura_komputer(pla, plastrzal, wynik, kor_strzal);
 	}
 	else
 	{
 		plastrzal[y][x] = '~';
 		pla[y][x] = '~';
+		if (kor_strzal.licznik = 1)
+			kor_strzal.licznik = 0;
+		if (kor_strzal.licznik > 1)
+			kor_strzal = { 0,0,0,0,false };									// jesli jest to pudlo po kilku trafieniach z rzedu, to znaczy, ze statek jest zatopiony
 		wyswietl_komputer(pla);
 		cout << "KOMPUTER SPUDLOWAL" << endl;
 		Sleep(2500);
@@ -422,22 +473,22 @@ void tura_gracz2(char pla2[][A], char pla2strzal[][A], int &wynik)
 {
 	int x;
 	int y;
-	char x1;
-	char y1;
+	char x1 = 0;
+	char y1 = 0;
 
-	while (((int)x1 < 97 && (int)x1 > 79) || (int)x1 < 65 || (int)x1 > 111 || pla2strzal[y][x] == 'o' || pla2strzal[y][x] == '~'  || ((int)y1 < 97 && (int)y1 > 79) || (int)y1 < 65 || (int)y1 > 111)
+	while (((int)x1 < 97 && (int)x1 > (63+A)) || (int)x1 < 65 || (int)x1 > (95+A) || pla2strzal[y][x] == 'o' || pla2strzal[y][x] == '~'  || ((int)y1 < 97 && (int)y1 > (63+A)) || (int)y1 < 65 || (int)y1 > (95+A))
 	{
 		wyswietl_gracz2(pla2strzal);
-		cout << "PODAJ KOORDYNATY ATAKU PIONOWE" << endl;
-		cin >> y1;
-		y = (int)y1 - 96;
-		if (y < 0)
-			y += 32;
 		cout << "PODAJ KOORDYNATY ATAKU POZIOME" << endl;
 		cin >> x1;
 		x = (int)x1 - 96;
 		if (x < 0)
 			x += 32;
+		cout << "PODAJ KOORDYNATY ATAKU PIONOWE" << endl;
+		cin >> y1;
+		y = (int)y1 - 96;
+		if (y < 0)
+			y += 32;
 	}
 
 
@@ -465,16 +516,21 @@ void tura_gracz2(char pla2[][A], char pla2strzal[][A], int &wynik)
 
 void main()
 {
-	char pla[A][A];
-	char plastrzal[A][A];
-	char pla2[A][A];
-	char pla2strzal[A][A];
+	//deklaracje
+	korekta kor_strzal = { 0,0,0,0,false };
+
+	char pla[A][A];						// plansza gracza 1
+	char plastrzal[A][A];				// plansza do strzalu w gracza 1
+	char pla2[A][A];					// plansza gracza 2/komputer
+	char pla2strzal[A][A];				// plansza do strzalu w gracza 2/komputer
 	bool wygrana = false;
 	int warunki_wygranej = maszt2.maszty*maszt2.ilosc + maszt3.maszty*maszt3.ilosc + maszt4.maszty*maszt4.ilosc + maszt5.maszty*maszt5.ilosc;
 	int wynik_gracz1 = 0;
 	int wynik_gracz2 = 0;
-	char sterujaca;
+	char sterujaca='0'; 
+	//koniec deklaracji
 
+	// poczatek programu, ekran poczatkowy
 	system("cls");
 	cout << "ZAGRAJ W STATKI" << endl;
 	cout << endl;
@@ -495,12 +551,12 @@ void main()
 			system("cls");
 			reset_pla(pla);
 			cout << "ROZSTAWIA GRACZ 1 (ENTER)" << endl;
-			getchar;
+			getchar();
 			rozstaw_gracz(pla);
 			system("cls");
 			reset_pla(pla2);
 			cout << "ROZSTAWIA GRACZ 2 (ENTER)" << endl;
-			getchar;
+			getchar();
 			rozstaw_gracz(pla2);
 			reset_pla(pla2strzal);
 			reset_pla(plastrzal);
@@ -546,7 +602,7 @@ void main()
 					cout << "WYGRAL GRACZ 1" << endl;
 					wygrana = true;
 				}
-				tura_komputer(pla, plastrzal, wynik_gracz2);
+				tura_komputer(pla, plastrzal, wynik_gracz2, kor_strzal);
 				if (wynik_gracz2 == warunki_wygranej)
 				{
 					system("cls");
