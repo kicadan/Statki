@@ -421,7 +421,7 @@ void tura_komputer(char pla[][A], char plastrzal[][A], int &wynik, korekta &kor_
 		{
 			x = rand() % (A - 1) + 1;
 			y = rand() % (A - 1) + 1;
-			if (plastrzal[y][x] != 'o' && plastrzal[y][x] != '~')
+			if (plastrzal[y][x] != 'o' && plastrzal[y][x] != '~' && plastrzal[y - 1][x] != 'o' && plastrzal[y + 1][x] != 'o' && plastrzal[y - 1][x - 1] != 'o' && plastrzal[y - 1][x + 1] != 'o' && plastrzal[y + 1][x - 1] != 'o' && plastrzal[y + 1][x + 1] != 'o'  && plastrzal[y][x - 1] != 'o' && plastrzal[y][x + 1] != 'o')
 				nie_bylo = true;
 		}
 
@@ -580,7 +580,8 @@ void main()
 		system("cls");
 		cout << "PRZECIWKO KOMU CHCESZ GRAC??" << endl;
 		cout << "     wpisz 'g' <<<<<<<<<<<<<<      " << "      >>>>>>>>>>>>>> wpisz 'k'" << endl;
-		cout << "       GRACZOWI                    " << "                KOMPUTEROWI" << endl;
+		cout << "       GRACZOWI                    " << "                KOMPUTEROWI" << endl << endl;
+		cout << "TWOJ WYBOR:" << endl;
 		cin >> sterujaca;
 		switch (sterujaca) // plansze sa resetowane te same przy wybraniu obojetnie jakiej opcji, za to przy wyborze g, obie plansze sa rozstawiane przez gracza, przy wyborze k, jedna jest rozstawiana przez gracza, a druga przez komputer (rozgrywka odbywa sie az do zbicia wszystkich pol ze statkiem)
 		{
